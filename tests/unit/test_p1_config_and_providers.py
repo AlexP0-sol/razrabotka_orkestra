@@ -395,3 +395,66 @@ async def test_openai_compat_provider_streaming_and_error_matrix(tmp_path: Path)
                     pass
 
     await provider.close()
+
+
+def test_setup_wizard_sequential_keys_and_space_to_skip(tmp_path: Path) -> None:
+    """Verify sequential key input stops cleanly on space (' ') and writes valid .env."""
+    from orchestra.config.setup_wizard import run_setup_wizard
+
+    k1 = "nvapi-" + "user-entered-key-alpha-01"
+    k2 = "nvapi-" + "user-entered-key-beta-02"
+    tg_tok = "12345678:" + "AAFakeWizardTelegramTokenForUnitTest"
+    rt_dir = str(tmp_path / "my_local_projects")
+
+    answers = iter(
+        [
+            " ",  # 1. Base URL -> space keeps default NVIDIA URL
+            "deepseek-ai/deepseek-v3.2",  # 2. Single model
+            k1,  # 3. Key #1
+            k1,  # duplicate -> skipped, asks again
+            k2,  # Key #2
+            " ",  # Key #3 -> space stops key loop immediately!
+            rt_dir,  # 4. Local runtime folder
+            tg_tok,  # 5. Telegram bot token
+            "not_digits",  # invalid UID -> re-prompts
+            "555001",  # UID #1
+            " ",  # UID #2 -> space finishes UIDs
+            " ",  # 6. Web console token -> space keeps localhost without password
+        ]
+    )
+    printed: list[str] = []
+    env_file = tmp_path / ".env"
+    env_file.write_text("# old env\n", encoding="utf-8")
+
+    cfg = run_setup_wizard(
+        env_path=env_file,
+        input_fn=lambda _prompt: next(answers),
+        output_fn=printed.append,
+    )
+    assert cfg.provider == "openai_compat"
+    assert cfg.default_model == "deepseek-ai/deepseek-v3.2"
+    assert cfg.api_keys == (k1, k2)
+    assert cfg.telegram_enabled is True
+    assert cfg.telegram_allowed_user_ids == (555001,)
+    assert cfg.web_host == "127.0.0.1"
+    assert (tmp_path / ".env.bak").is_file()
+
+    # Ensure raw keys never leaked into printed wizard summary
+    joined_out = "\n".join(printed)
+    assert k1 not in joined_out
+    assert k2 not in joined_out
+
+    loaded = load_settings(env_file=env_file)
+    assert loaded.llm.default_model == "deepseek-ai/deepseek-v3.2"
+    assert [k.get_secret_value() for k in loaded.key_pool.keys] == [k1, k2]
+    assert loaded.telegram.allowed_user_ids == [555001]
+
+    # Also verify space on Key #1 falls back cleanly to provider=mock
+    mock_answers = iter([" ", " ", " ", str(tmp_path / "rt2"), " ", " "])
+    cfg_mock = run_setup_wizard(
+        env_path=tmp_path / ".env.mock",
+        input_fn=lambda _p: next(mock_answers),
+        output_fn=lambda _m: None,
+    )
+    assert cfg_mock.provider == "mock"
+    assert cfg_mock.api_keys == ()

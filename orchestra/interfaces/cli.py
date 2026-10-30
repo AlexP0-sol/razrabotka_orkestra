@@ -45,6 +45,16 @@ def cmd_version() -> None:
     console.print(f"ORCHESTRA v{orchestra.__version__}")
 
 
+@app.command("setup")
+def cmd_setup(
+    env_file: Path = typer.Option(Path(".env"), "--env-file", help="Путь к создаваемому .env"),
+) -> None:
+    """Поочерёдный интерактивный мастер ввода модели, API-ключей и настроек (.env)."""
+    from orchestra.config.setup_wizard import run_setup_wizard
+
+    run_setup_wizard(env_path=env_file)
+
+
 @app.command("init")
 def cmd_init(runtime_dir: Path = typer.Option(Path("./runtime"), help="Путь к runtime/")) -> None:
     """Инициализировать структуру каталогов runtime/, реестр скиллов и талантов."""
