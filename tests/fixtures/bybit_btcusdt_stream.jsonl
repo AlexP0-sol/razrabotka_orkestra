@@ -1,0 +1,4 @@
+{"event_id": "by_001", "exchange": "bybit", "symbol": "BTC/USDT:USDT", "exchange_ts": 1730000060000, "received_at": 1730000060030, "seq": 1, "close": "68005.50", "volume": "4.000"}
+{"event_id": "by_002", "exchange": "bybit", "symbol": "BTC/USDT:USDT", "exchange_ts": 1730000120000, "received_at": 1730000120025, "seq": 2, "close": "68125.00", "volume": "5.200"}
+{"event_id": "by_003", "exchange": "bybit", "symbol": "BTC/USDT:USDT", "exchange_ts": 1730000180000, "received_at": 1730000180034, "seq": 3, "close": "68092.50", "volume": "3.700"}
+{"event_id": "by_004", "exchange": "bybit", "symbol": "BTC/USDT:USDT", "exchange_ts": 1730000240000, "received_at": 1730000240028, "seq": 4, "close": "68255.00", "volume": "6.100"}

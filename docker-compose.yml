@@ -1,0 +1,21 @@
+services:
+  orchestra:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      ORCHESTRA_PROFILE: dev
+      ORCHESTRA_LLM__PROVIDER: mock
+      ORCHESTRA_TELEGRAM__ENABLED: "false"
+      ORCHESTRA_WEB__ENABLED: "true"
+      ORCHESTRA_WEB__HOST: 0.0.0.0
+      ORCHESTRA_WEB__PORT: 8000
+      ORCHESTRA_RUNTIME_DIR: /app/runtime
+    volumes:
+      - orchestra_runtime:/app/runtime
+    restart: unless-stopped
+
+volumes:
+  orchestra_runtime:

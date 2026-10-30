@@ -1,0 +1,65 @@
+# Multi-Exchange Registry as Data (§38.19, DP-78, DP-79, DP-88)
+# Adding an exchange requires ONLY an adapter under gateway/adapters/ and an entry here.
+# Fail-closed: `enabled` is empty by default so no live/testnet venue is active unless explicitly configured.
+
+schema_version: 1
+enabled: []
+
+exchanges:
+  binance:
+    adapter: ccxt_baseline
+    native_override: binance_native
+    markets: [spot, perp, futures]
+    order_types: [LIMIT, MARKET, POST_ONLY, STOP_LIMIT, STOP_MARKET]
+    supports_reduce_only: true
+    funding:
+      supported: true
+      interval_hours: 8
+    rate_limit:
+      model: request_weight
+      requests_per_minute: 1200
+      orders_per_10s: 50
+    signing: [HMAC-SHA256, Ed25519]
+    has_testnet: true
+    ws:
+      public_stream: true
+      private_stream: true
+      keepalive_interval_s: 1800
+      silence_timeout_s: 30
+      book_resync_rule: last_update_id_continuity
+    quantum:
+      price_rounding: tick_size
+      qty_rounding: step_size_down
+      enforces_min_notional: true
+    client_order_id_max_len: 36
+    timeframes: [1m, 5m, 15m, 1h, 4h, 1d]
+    max_open_orders_per_symbol: 200
+
+  bybit:
+    adapter: ccxt_baseline
+    native_override: bybit_native
+    markets: [spot, perp, futures, options]
+    order_types: [LIMIT, MARKET, POST_ONLY, STOP_LIMIT, STOP_MARKET]
+    supports_reduce_only: true
+    funding:
+      supported: true
+      interval_hours: 8
+    rate_limit:
+      model: endpoint_bucket
+      requests_per_minute: 600
+      orders_per_10s: 100
+    signing: [HMAC-SHA256, RSA]
+    has_testnet: true
+    ws:
+      public_stream: true
+      private_stream: true
+      keepalive_interval_s: 20
+      silence_timeout_s: 30
+      book_resync_rule: snapshot_plus_seq_delta
+    quantum:
+      price_rounding: tick_size
+      qty_rounding: step_size_down
+      enforces_min_notional: true
+    client_order_id_max_len: 36
+    timeframes: [1m, 5m, 15m, 1h, 4h, 1d]
+    max_open_orders_per_symbol: 500

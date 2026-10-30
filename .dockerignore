@@ -1,0 +1,16 @@
+.git
+.github
+.venv
+venv
+runtime
+__pycache__
+.mypy_cache
+.pytest_cache
+.ruff_cache
+.hypothesis
+.coverage
+htmlcov
+.env
+.env.*
+!.env.example
+razrabotka_orkestra.html

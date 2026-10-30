@@ -1,0 +1,55 @@
+name: ORCHESTRA CI
+
+on:
+  push:
+    branches: ["main", "arena/**"]
+  pull_request:
+
+jobs:
+  verify-matrix:
+    name: Verify (${{ matrix.os }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install pinned dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+          pip install --no-deps -e .
+
+      - name: Lint & Format Check (Ruff)
+        run: |
+          ruff format --check orchestra tests
+          ruff check orchestra tests
+
+      - name: Strict Type Check (Mypy)
+        run: mypy --strict orchestra tests
+
+      - name: Test Suite & Core Coverage Gate
+        run: pytest --cov=orchestra --cov-fail-under=75 -q
+
+      - name: Secret Leak Audit
+        run: python scripts/check_secrets_leak.py .
+
+  docker-build:
+    name: Docker Image Smoke Build
+    runs-on: ubuntu-latest
+    needs: verify-matrix
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t orchestra:ci .

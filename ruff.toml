@@ -1,0 +1,35 @@
+line-length = 100
+target-version = "py311"
+
+[lint]
+select = [
+    "E",
+    "F",
+    "W",
+    "I",
+    "N",
+    "UP",
+    "B",
+    "A",
+    "C4",
+    "SIM",
+    "TCH",
+    "RUF",
+    "ASYNC",
+    "PTH",
+    "RET",
+    "ARG",
+    "DTZ",
+]
+
+ignore = ["RUF001", "RUF002", "RUF003", "TC001", "TC002", "TC003"]
+
+[lint.per-file-ignores]
+"orchestra/errors.py" = ["N818"]
+"orchestra/interfaces/cli.py" = ["B008"]
+"tests/**" = ["ARG001", "ARG002"]
+
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"

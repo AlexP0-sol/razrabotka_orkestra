@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ORCHESTRA — Пульт управления роем агентов</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo-dot"></span>
+      <strong>ORCHESTRA</strong>
+      <span id="project-badge" class="badge">проект: —</span>
+      <span id="stage-badge" class="badge badge-stage">стадия: S0</span>
+    </div>
+    <div class="status-group">
+      <span id="ws-status" class="ws-pill ws-connecting">WS: подключение…</span>
+      <span id="summary-counters" class="counters">Узлы: 0 | Ключи: 0 | Скиллы: 0</span>
+    </div>
+  </header>
+
+  <main class="grid-layout">
+    <section class="panel dag-panel">
+      <div class="panel-header">
+        <h2>Ментальная карта (DAG SSOT)</h2>
+        <span id="map-version" class="muted">v1</span>
+      </div>
+      <div id="dag-canvas-wrap" class="dag-wrap">
+        <svg id="dag-svg" viewBox="0 0 900 420" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+    </section>
+
+    <section class="panel inspector-panel">
+      <div class="panel-header">
+        <h2>Инспектор узла и контрактов</h2>
+      </div>
+      <div id="node-inspector" class="inspector-body">
+        Кликните на узел графа для просмотра статуса, файлов, контрактов и дефектов.
+      </div>
+    </section>
+
+    <section class="panel stream-panel">
+      <div class="panel-header">
+        <h2>Поток мыслей (Reasoning) и межагентный RPC</h2>
+        <button id="clear-stream-btn" type="button" class="btn-small">Очистить</button>
+      </div>
+      <div id="live-stream" class="stream-log"></div>
+    </section>
+
+    <section class="panel side-panel">
+      <div class="panel-header">
+        <h2>Вопросы человеку (L3) и Пул ключей</h2>
+      </div>
+      <div id="questions-box" class="questions-list">Открытых вопросов нет.</div>
+      <hr class="sep" />
+      <div id="keys-box" class="keys-list">Ключи не загружены.</div>
+    </section>
+  </main>
+
+  <script type="module" src="/static/app.js"></script>
+</body>
+</html>

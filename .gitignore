@@ -1,0 +1,43 @@
+# Runtime state, project workspaces, caches, and reasoning logs (FP-13, ST-01)
+runtime/
+/runtime/
+*.log
+
+# Secrets and local environment (BAN-04, SEC-01)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.secret
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python bytecode and packaging artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+build/
+dist/
+wheels/
+
+# Tooling caches & coverage reports
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# OS / IDE metadata
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

@@ -1,4 +1,4 @@
-# MASTER PROMPT v1.2 — «ORCHESTRA»
+# MASTER PROMPT v1.2.1 — «ORCHESTRA»
 ## Автономная фабрика разработки ПО с эволюционирующим роем агентов
 ### Доменный пакет: криптобиржи и алгоритмические торговые стратегии
 ### Целевая платформа: Windows (Linux/macOS — вторичные, через CI и контейнеры)
@@ -28,8 +28,8 @@
 > 4. Если контекст исполнителя ограничен — подавать по частям согласно схеме в `README.md`
 >    (вариант C).
 >
-> **Объём:** 451 формализованное требование + доменный пакет. Требование считается выполненным,
-> только если реализовано в коде и покрыто тестом, а не упомянуто в тексте.
+> **Объём:** 591 формализованное требование + 49 пунктов Definition of Done + доменный пакет.
+> Требование считается выполненным, только если реализовано в коде и покрыто тестом, а не упомянуто в тексте.
 
 ---
 
@@ -40,6 +40,7 @@
 | **v1.0** | Первая полная редакция: консолидация всего архитектурного диалога, разрешение 15 внутренних противоречий источника (§1.2), 14 фаз поставки, схемы данных, мета-промпты, Definition of Done из 37 пунктов |
 | **v1.1** | (1) Зафиксирован режим исполнения: кодинг-агент с доступом к git-репозиторию — добавлены FP-09…FP-14 (запись на диск, обязательный прогон проверок, коммиты, запрет коммитить секреты и `runtime/`). (2) Подтверждена провайдер-агностичная архитектура с capability probe (без изменений). (3) **Добавлена Часть VIII — доменный пакет «Криптобиржи и алгоритмические стратегии»**: 20 жёстких торговых инвариантов `TR-xx`, 40 требований `DP-xx`, целевая архитектура торгового продукта, 8 профессий по умолчанию, доменные скиллы и верификаторы, готовая декомпозиция первого проекта, специфические эскалации. (4) Обновлены §33 (тесты), §34 (стек), §35 (DoD-38…DoD-44), Приложение B и C |
 | **v1.2** | Решения заказчика по уточняющим вопросам: (1) **Windows — основная платформа** → добавлен §13.21 (`WIN-01…WIN-23`): Job Objects вместо `setrlimit`, убийство дерева процессов, ProactorEventLoop, атомарная запись с ретраями поверх заблокированных файлов, регистронезависимость ФС, LF и `.gitattributes`, длинные пути, UTF-8 и `PYTHONUTF8`, `venv_python`, Docker Desktop + WSL2 и трансляция путей, платформенные маркеры тестов и CI-матрица, раздел «Платформа» в `doctor`. (2) **Песочница — оба режима** (subprocess по умолчанию + Docker опцией) — подтверждено, добавлена деградация при отсутствии Docker (`WIN-20`). (3) **Бирж будет много** → добавлен §38.19 (`DP-78…DP-88`): мультибиржевость с первого дня, реестр бирж как данные, `ExchangeCapabilities`, нормализованная схема поверх бирж, `ccxt` как baseline (принято заказчиком), отдельные лимитеры/скью/reconciliation/kill switch на биржу, `CrossExchangeTimeAligner` для арбитража, P2P как будущий отдельный слой, fail-closed `exchanges.enabled`. (4) **Дашборд — лёгкий, без сборки**: vanilla JS + vendored Cytoscape.js зафиксированы, React/Next вынесен из объёма v1. (5) Обновлены §13.1, §13.11, §13.16, §13.20, §33, §34, §35 (DoD-45…DoD-49), Приложения B и C |
+| **v1.2.1** | Устранение 7 структурных и ссылочных коллизий по итогам аудита и Codex Review: (1) дерево §10 выровнено по корню репозитория `./` (без дублирующей обёртки `orchestra/`), закрыт конфликт с §0 и `DoD-02/03`; (2) уточнён `FP-15`: `prompts/` и `razrabotka_orkestra.html` неприкосновенны (ключ `nvapi-*` санитизирован до `nvapi-REDACTED`), корневой `README.md` совмещает описание продукта и навигацию по ТЗ; (3) синхронизированы пути модулей в §4 и §10; (4) `M-03` и `TT-05` привязаны к реальным пакетам ядра (`state`, `verify`, `inference`, `swarm`, `agents`, `comms`); (5) в дерево §10 добавлены все 10 builtin-скиллов (§13.9.3), 12 крипто-скиллов (`data_quality_check.py`, §38.12) и 10 шаблонов мета-промптов (§28–§31); (6) актуализированы `DoD-40` (13 правил §38.13) и перекрёстные ссылки `DP-xx` в Части VIII |
 
 ---
 ---
@@ -199,21 +200,21 @@ LLM-оркестрация, мультиагентные системы, TDD-и�
 
 | Фаза | Название | Состав поставки |
 |------|----------|-----------------|
-| **P0** | Архитектурный фундамент | `ARCHITECTURE.md` (слои, потоки данных, диаграмма ASCII/mermaid), полное дерево файлов репозитория, реестр ADR-0001..A000N с обоснованием ключевых решений, `pyproject.toml`, `requirements.txt`, `.env.example`, `Makefile`, `README.md`, `Dockerfile`, `docker-compose.yml` |
-| **P1** | Конфигурация и слой провайдеров | `settings.py`, `models_registry.py`, `provider_base.py` (Protocol), `provider_openai_compat.py` (NVIDIA Build), `provider_mock.py` (детерминированный мок для тестов), `capabilities.py` + probe, `errors.py` (типизированная иерархия исключений) |
-| **P2** | Пул ключей и LLM-рантайм | `key_pool.py`, `llm_client.py` (dual-stream, бюджеты, ретраи, кэш ответов, учёт токенов), `stream_router.py`, `structured_output.py` (Pydantic-парсинг + repair) |
-| **P3** | Слой состояния | `mental_map.py` (схемы узлов, FSM статусов, DAG-валидация, атомарная персистенция, event log, recovery), `state_store.py` (single-writer actor, optimistic concurrency), `adr.py`, `antipatterns.py` |
-| **P4** | Роли и рой | `charter.py` (Agent Charter / Sub-Map: генерация, валидация, заморозка), `talents.py` (библиотека профессий `/agent_talents/`), `agent_runtime.py` (цикл жизни агента), `swarm.py` (DynamicSwarmOrchestrator: org design, планировщик, гейты, ретраи, deadlock-detection) |
-| **P5** | Коммуникация | `rpc_protocol.py` (полный набор Pydantic-моделей `INTER_AGENT_RPC_V1`), `event_bus.py` (in-process pub/sub + persisting outbox), `contract_registry.py`, `escalation.py` (тикеты, эскалации, таймауты) |
-| **P6** | Скиллы и память | `skill_registry.py` (манифест, поиск, регистрация), `skill_executor.py` (изолированное исполнение), `skill_synthesis.py` (динамический синтез), `skill_mutation.py` (Mutation Gate), `diary_manager.py` (Empirical Proof Gate), `context_budget.py` (сборка промпта 20/30/50) |
-| **P7** | Верификация и исполнительный контур | `sandbox.py` (изолированный запуск, лимиты, таймауты, захват вывода), `verifiers.py` (стратегии: Python/JS-TS/shell), `patch_engine.py` (search/replace + unified diff, all-or-nothing), `git_ops.py` (атомарные коммиты), `judge.py` (детерминированный судья + цикл ≤2 итераций) |
-| **P8** | Исследование и анти-галлюцинации | `research.py` (фаза Pre-Study, документ «Стек и Best Practices»), `doc_reader.py` (just-in-time чтение документации), `grounding.py` (запрет догадок, проверка версий API), `web_search.py` (опциональный провайдер поиска) |
-| **P9** | Человеческие интерфейсы | `telegram_bridge.py` (aiogram 3.x: интервью, SITREP, inline-кнопки, неблокирующая эскалация), `api_server.py` (FastAPI + WebSocket), `web_dashboard/` (DAG, стрим мыслей, диффы, управление), `cli.py` (Rich live-консоль, headless-режим) |
-| **P10** | Наблюдаемость, безопасность, отказоустойчивость | `telemetry.py` (метрики, токены, стоимость), `logging_setup.py` (структурные JSON-логи, маскирование секретов, correlation ids), `resilience.py` (ретраи, circuit breaker, бюджеты), `security.py` (секреты, prompt-injection защита) |
-| **P11** | Мета-промпты | `prompts/architect.md`, `prompts/developer.md`, `prompts/qa_critic.md`, `prompts/post_mortem.md`, `prompts/skill_synthesis.md`, `prompts/diary_entry.md`, `prompts/interview.md`, `prompts/sitrep.md` + `prompt_builder.py` (сборка из слоёв) |
-| **P11b** | Доменный пакет | `orchestra/domains/base.py` + `crypto_trading.py`: 8 профессий (§38.11), 12 доменных скиллов с тестами (§38.12), верификаторы `crypto_trading` (§38.13), реестр обязательных эскалаций (§38.16), `docs/DOMAIN_CRYPTO_TRADING.md` |
-| **P12** | Тесты и приёмка | `tests/unit/**`, `tests/integration/**` (на MockProvider, без реальных ключей), `tests/e2e/test_factory_builds_todo_api.py`, `tests/chaos/**` (429-шторм, SIGKILL-recovery, таймаут песочницы), покрытие ≥ 85%, зелёный `mypy --strict` и `ruff check` |
-| **P13** | Документация и поставка | `docs/` (runbook, инструкция запуска, архитектура, протоколы), `CHANGELOG.md`, демонстрационный сценарий «из коробки», финальный отчёт о соответствии §35 (Definition of Done) |
+| **P0** | Архитектурный фундамент | `ARCHITECTURE.md` (слои, потоки данных, диаграмма ASCII/mermaid), полное дерево файлов репозитория, реестр ADR-0001..A000N с обоснованием ключевых решений, `pyproject.toml`, `requirements.txt`, `requirements-dev.txt`, `.env.example`, `.gitignore`, `.gitattributes`, `Makefile`, `README.md`, `Dockerfile`, `docker-compose.yml`, `ruff.toml`, `mypy.ini`, `pytest.ini`, `docs/PROGRESS.md`, `docs/DEFAULTS.md` |
+| **P1** | Конфигурация и слой провайдеров | `orchestra/config/{constants,settings,models_registry}.py`, `orchestra/errors.py`, `orchestra/providers/{base,capabilities,openai_compat,mock,token_counter}.py` |
+| **P2** | Пул ключей и LLM-рантайм | `orchestra/inference/{key_pool,llm_client,stream_router,structured_output}.py` |
+| **P3** | Слой состояния | `orchestra/state/{mental_map,state_store,event_log,adr,antipatterns,contracts}.py` |
+| **P4** | Роли и рой | `orchestra/agents/{charter,agent_runtime,roles_catalog}.py`, `orchestra/talents/talents_store.py`, `orchestra/swarm/{orchestrator,org_design,scheduler,gates,deadlock}.py` |
+| **P5** | Коммуникация | `orchestra/comms/{rpc_protocol,event_bus,telegraphic,escalation}.py` |
+| **P6** | Скиллы и память | `orchestra/skills/{registry,executor,synthesis,mutation_gate,security_scan}.py`, `orchestra/skills/builtin/*.py`, `orchestra/talents/{diary_manager,post_mortem}.py`, `orchestra/agents/context_budget.py` |
+| **P7** | Верификация и исполнительный контур | `orchestra/verify/{sandbox,verifiers,patch_engine,git_ops,judge}.py` (+ платформенный слой Windows/POSIX §13.21) |
+| **P8** | Исследование и анти-галлюцинации | `orchestra/research/{pre_study,doc_reader,grounding,web_search}.py` |
+| **P9** | Человеческие интерфейсы | `orchestra/interfaces/{telegram_bridge,telegram_keyboards,api_server,ws_events,cli}.py`, `orchestra/web/{index.html,app.js,styles.css,vendor/*}` |
+| **P10** | Наблюдаемость, безопасность, отказоустойчивость | `orchestra/telemetry/{metrics,logging_setup,resilience}.py`, `orchestra/security/{secrets,injection_guard}.py` |
+| **P11** | Мета-промпты | `orchestra/prompts/templates/{architect,developer,qa_critic,post_mortem,skill_synthesis,diary_entry,interview,sitrep,patch_instructions,self_review}.md` + `orchestra/prompts/prompt_builder.py` |
+| **P11b** | Доменный пакет | `orchestra/domains/{base,crypto_trading}.py`, `orchestra/skills/builtin/crypto/*.py`: 8 профессий (§38.11), 12 доменных скиллов с тестами (§38.12), 13 правил верификатора `crypto_trading` (§38.13), реестр обязательных эскалаций (§38.16), `exchanges.yaml`, `docs/DOMAIN_CRYPTO_TRADING.md` |
+| **P12** | Тесты и приёмка | `tests/unit/**`, `tests/integration/**` (на MockProvider, без реальных ключей), `tests/e2e/test_factory_builds_todo_api.py`, `tests/e2e/test_factory_builds_trading_base.py`, `tests/chaos/**`, `scripts/check_secrets_leak.py`, `.github/workflows/ci.yml`, покрытие ≥ 85%, зелёный `mypy --strict` и `ruff check` |
+| **P13** | Документация и поставка | `docs/{RUNBOOK,PROTOCOLS,DEFAULTS,PROGRESS}.md`, `CHANGELOG.md`, `scripts/bootstrap_demo.py`, демонстрационный сценарий «из коробки», финальный отчёт о соответствии §35 (Definition of Done) |
 
 **Правила фазового протокола:**
 
@@ -255,9 +256,12 @@ FMT-02/FMT-03 в части «выдачи кода текстом».
   запустить тесты, установить dev-зависимости из `requirements-dev.txt`, сделать коммит в рабочую
   ветку. Спрашивать нужно только то, что перечислено в DEC-03 (внешние ресурсы, платные сервисы,
   изменение публичного контракта) и в §38.9 (доменные эскалации).
-- **FP-15.** Если репозиторий уже содержит файлы (как сейчас: `razrabotka_orkestra.html`,
-  `prompts/`, `README.md`) — их **нельзя удалять или перезаписывать** без явного указания.
-  Дерево §10 создаётся рядом с ними.
+- **FP-15.** Каталог `prompts/` (`MASTER_PROMPT.md`, `SOURCE_ANALYSIS.md`) и файл
+  `razrabotka_orkestra.html` **нельзя удалять** (допускается только санитизация секретов и
+  согласованная правка версий ТЗ). Корневой `README.md` оформляется как документация продукта
+  ORCHESTRA (DoD-36) с обязательным сохранением ссылок на `prompts/MASTER_PROMPT.md` и
+  `prompts/SOURCE_ANALYSIS.md`. Шаблоны системных мета-промптов живут строго в
+  `orchestra/prompts/templates/`. Дерево §10 разворачивается прямо в корне репозитория `./`.
 
 ---
 
@@ -331,8 +335,9 @@ ORCHESTRA — локальная автономная «цифровая сту�
 - **M-01.** Демо-сценарий «собрать Todo API на FastAPI» проходит end-to-end на MockProvider
   без единого реального LLM-вызова (полная детерминированность тестов).
 - **M-02.** `mypy --strict` и `ruff check` — 0 ошибок на всей кодовой базе оркестратора.
-- **M-03.** Покрытие тестами ≥ 85% по строкам для пакетов `orchestra/core`, `orchestra/state`,
-  `orchestra/verify`.
+- **M-03.** Покрытие тестами ≥ 85% по строкам для пакетов ядра (`orchestra/state`,
+  `orchestra/verify`, `orchestra/inference`, `orchestra/swarm`, `orchestra/agents`,
+  `orchestra/comms`).
 - **M-04.** Убийство процесса (`SIGKILL`) в случайный момент и перезапуск восстанавливают проект
   без потери закрытых узлов; проверка — chaos-тестом.
 - **M-05.** Шторм из 100% ответов `429` по одному ключу не останавливает пайплайн: ключ уходит
@@ -466,11 +471,12 @@ ORCHESTRA — локальная автономная «цифровая сту�
 
 ## 10. ФАЙЛОВАЯ СТРУКТУРА РЕПОЗИТОРИЯ
 
-Ниже — **обязательный** каркас. Исполнитель может добавлять файлы, но не может удалять или
-переименовывать указанные. Дерево создаётся в фазе P0 и далее только наполняется.
+Ниже — **обязательный** каркас в корне репозитория (`./`). Исполнитель может добавлять файлы,
+но не может удалять или переименовывать указанные. Дерево создаётся в фазе P0 и далее только
+наполняется.
 
 ```
-orchestra/
+./
 ├── ARCHITECTURE.md
 ├── README.md
 ├── CHANGELOG.md
@@ -478,23 +484,29 @@ orchestra/
 ├── pyproject.toml
 ├── requirements.txt
 ├── requirements-dev.txt
+├── exchanges.yaml
 ├── .env.example
 ├── .gitignore
+├── .gitattributes
 ├── .dockerignore
 ├── Dockerfile
 ├── docker-compose.yml
 ├── ruff.toml
 ├── mypy.ini
 ├── pytest.ini
+├── prompts/                        # документация ТЗ (не удалять, FP-15)
+│   ├── MASTER_PROMPT.md
+│   └── SOURCE_ANALYSIS.md
+├── razrabotka_orkestra.html        # Source of Context (санитизирован)
 ├── docs/
 │   ├── RUNBOOK.md                  # запуск, настройка, эксплуатация
 │   ├── PROTOCOLS.md                # все регламенты §14–§26 человекочитаемо
 │   ├── DEFAULTS.md                 # решения, принятые по умолчанию (DEC-04)
 │   ├── PROGRESS.md                 # статус фаз P0..P13 (FMT-09), точка возобновления
-│   └── DOMAIN_CRYPTO_TRADING.md    # доменный пакет (Часть VIII) человекочитаемо
+│   ├── DOMAIN_CRYPTO_TRADING.md    # доменный пакет (Часть VIII) человекочитаемо
 │   └── adr/
 │       ├── ADR-0001-own-runtime-vs-langgraph.md
-│       ├── ADR-0002-state-persistence-model.md
+│       ├── ADR-0002-dependency-baseline.md
 │       └── ...
 ├── orchestra/
 │   ├── __init__.py
@@ -552,15 +564,20 @@ orchestra/
 │   │   ├── synthesis.py            # динамический синтез нового скилла
 │   │   ├── mutation_gate.py        # TDD-гейт изменения существующего скилла
 │   │   ├── security_scan.py        # статический скан кода скилла перед регистрацией
-│   │   └── builtin/                # скиллы, поставляемые с системой
+│   │   └── builtin/                # 10 базовых скиллов (§13.9.3)
+│   │       ├── __init__.py
 │   │       ├── search_documentation.py
 │   │       ├── read_project_ast.py
 │   │       ├── run_sandbox_test.py
+│   │       ├── apply_patch.py
 │   │       ├── append_to_diary.py
 │   │       ├── escalate_to_architect.py
-│   │       ├── patch_file.py
 │   │       ├── git_commit.py
-│   │       └── crypto/             # доменные скиллы (DP-46), сидируются в runtime/skills/
+│   │       ├── verify_api_exists.py
+│   │       ├── count_tokens.py
+│   │       ├── list_dir_tree.py
+│   │       └── crypto/             # 12 доменных скиллов (§38.12), сидируются в runtime/skills/
+│   │           ├── __init__.py
 │   │           ├── exchange_symbol_info.py
 │   │           ├── decimal_money.py
 │   │           ├── ws_replay.py
@@ -571,7 +588,8 @@ orchestra/
 │   │           ├── audit_log_append.py
 │   │           ├── risk_limits_check.py
 │   │           ├── backtest_report.py
-│   │           └── funding_rate_fetch.py
+│   │           ├── funding_rate_fetch.py
+│   │           └── data_quality_check.py
 │   ├── talents/
 │   │   ├── __init__.py
 │   │   ├── talents_store.py        # /agent_talents/: profile.json, история версий
@@ -593,7 +611,7 @@ orchestra/
 │   ├── prompts/
 │   │   ├── __init__.py
 │   │   ├── prompt_builder.py       # сборка системного промпта из слоёв
-│   │   └── templates/              # тексты мета-промптов (фаза P11)
+│   │   └── templates/              # 10 шаблонов мета-промптов (§28–§31, фаза P11)
 │   │       ├── architect.md
 │   │       ├── developer.md
 │   │       ├── qa_critic.md
@@ -601,7 +619,9 @@ orchestra/
 │   │       ├── sitrep.md
 │   │       ├── post_mortem.md
 │   │       ├── skill_synthesis.md
-│   │       └── diary_entry.md
+│   │       ├── diary_entry.md
+│   │       ├── patch_instructions.md
+│   │       └── self_review.md
 │   ├── interfaces/
 │   │   ├── __init__.py
 │   │   ├── api_server.py           # FastAPI: REST + WebSocket
@@ -3044,8 +3064,8 @@ STYLE: TELEGRAPHIC ENGLISH, NO POLITENESS, NO HEDGING.
   внедряемые часы `Clock` Protocol — второе предпочтительнее).
 - **TT-04.** `pytest -q` на всём наборе — ≤ 5 минут на обычном железе (тяжёлые сценарии помечаются
   `@pytest.mark.slow` и запускаются отдельно).
-- **TT-05.** Покрытие: `pytest --cov=orchestra --cov-fail-under=85` для пакетов
-  `core/state/verify/inference`, общий порог ≥ 75%.
+- **TT-05.** Покрытие: `pytest --cov=orchestra --cov-fail-under=85` для пакетов ядра
+  (`state/verify/inference/swarm/agents/comms`), общий порог ≥ 75%.
 - **TT-06.** CI-конфигурация (`.github/workflows/ci.yml`): lint → types → tests → coverage →
   secrets-leak-check → сборка Docker-образа. **Матрица ОС обязательна** (`WIN-21`):
   `windows-latest` и `ubuntu-latest`; платформенно-зависимые тесты — под маркерами
@@ -3226,7 +3246,7 @@ Git — только через CLI `git` (`create_subprocess_exec`), не че�
       список обязательных эскалаций (§38.16).
 - [ ] DoD-39. Все доменные скиллы сидируются в `runtime/skills/` при первом старте, имеют
       `test_skill.py` и проходят Mutation Gate (T-17).
-- [ ] DoD-40. Все 11 правил §38.13 работают как часть судьи и покрыты тестами (T-17).
+- [ ] DoD-40. Все 13 правил §38.13 работают как часть судьи и покрыты тестами (T-17).
 - [ ] DoD-41. E2E-сценарий T-16 проходит на MockProvider: фабрика собирает ядро торгового
       проекта по декомпозиции §38.15, режим по умолчанию `PAPER`.
 - [ ] DoD-42. Инварианты TR-01…TR-20 обеспечены **механически** (верификаторы + типы + судья),
@@ -3346,7 +3366,7 @@ Git — только через CLI `git` (`create_subprocess_exec`), не че�
   **Запрещено** иметь «версию стратегии для бэктеста» и «боевую версию» — это источник 90%
   расхождений между бэктестом и реальностью.
 - **DP-05.** Стратегия **не знает**, в каком режиме работает, и не имеет доступа к биржевому
-  адаптеру напрямую (DP-22). Она выдаёт намерения (`OrderIntent`), решение об отправке принимают
+  адаптеру напрямую (DP-23). Она выдаёт намерения (`OrderIntent`), решение об отправке принимают
   Risk (E) и Execution (D).
 - **DP-06.** Режим по умолчанию — `PAPER`. `LIVE` не включается конфигурацией при первом запуске:
   требуется явное действие человека (DP-67, DP-71).
@@ -3364,11 +3384,11 @@ Git — только через CLI `git` (`create_subprocess_exec`), не че�
 | **TR-03** | Каждый ордер отправляется с уникальным `clientOrderId` (идемпотентность) |
 | **TR-04** | Каждая попытка отправки ордера пишется в append-only аудит **до** отправки и обновляется **после** ответа |
 | **TR-05** | Pre-trade risk checks выполняются **всегда** и не отключаются конфигом; конфиг может только ужесточить лимиты |
-| **TR-06** | Kill switch существует на уровне стратегии и на уровне системы и срабатывает автоматически по перечисленным триггерам (DP-30) |
+| **TR-06** | Kill switch существует на уровне стратегии и на уровне системы и срабатывает автоматически по перечисленным триггерам (DP-36) |
 | **TR-07** | Live-торговля невозможна без явного подтверждения человека (DP-06, DP-67, DP-71) |
-| **TR-08** | Биржевые ключи — только с правом торговли, **без права вывода** (DP-23) |
-| **TR-09** | Собственный rate limiter учитывает вес запросов биржи; 429/418 обрабатываются по DP-18 |
-| **TR-10** | После любого разрыва WebSocket стакан **ресинхронизируется** снапшотом (DP-20). Работа на «дырявом» стакане запрещена |
+| **TR-08** | Биржевые ключи — только с правом торговли, **без права вывода** (DP-28) |
+| **TR-09** | Собственный rate limiter учитывает вес запросов биржи; 429/418 обрабатываются по DP-22 |
+| **TR-10** | После любого разрыва WebSocket стакан **ресинхронизируется** снапшотом (DP-25). Работа на «дырявом» стакане запрещена |
 | **TR-11** | Все состояния ордера описаны явной машиной состоянений, включая `UNKNOWN` (DP-07, §38.3) |
 | **TR-12** | Периодическая сверка локального состояния с биржей (reconciliation); расхождение → HALT + SITREP |
 | **TR-13** | Комиссии (maker/taker), funding и slippage учитываются и в live, и в бэктесте |
@@ -3376,7 +3396,7 @@ Git — только через CLI `git` (`create_subprocess_exec`), не че�
 | **TR-15** | Look-ahead bias в бэктесте исключён механически: стратегия видит только данные с `t <= event_time` |
 | **TR-16** | Survivorship bias учтён: universe инструментов — на дату, делистинги зафиксированы |
 | **TR-17** | Перед отправкой ордера цена и количество нормализованы под `tick_size` / `step_size` / `min_notional` инструмента |
-| **TR-18** | Подпись и nonce строятся от **server time** биржи, clock skew контролируется (DP-15) |
+| **TR-18** | Подпись и nonce строятся от **server time** биржи, clock skew контролируется (DP-17) |
 | **TR-19** | Запросы подписаны (HMAC-SHA256 или Ed25519); секрет подписи никогда не логируется и не сериализуется |
 | **TR-20** | Любая денежная величина имеет явную валюту: тип `Amount(value: Decimal, asset: str)`, а не «голое число» |
 
@@ -3405,7 +3425,7 @@ NEW ──► SUBMITTED ──► ACCEPTED ──► PARTIALLY_FILLED ──► 
 - **DP-10.** Таблица переходов — данные (`order_states.yaml`), а не if-цепочки; недопустимый
   переход → исключение `IllegalOrderTransition` + аудит + (при повторе) kill switch.
 - **DP-11.** Частичные исполнения накапливаются; сумма исполненных объёмов обязана равняться
-  объёму ордера (проверяется property-тестом DP-53).
+  объёму ордера (проверяется property-тестом DP-63).
 
 ---
 
@@ -3433,13 +3453,13 @@ NEW ──► SUBMITTED ──► ACCEPTED ──► PARTIALLY_FILLED ──► 
   (`CLOCK_SYNC_INTERVAL_S = 300`); вычисляется `clock_skew = server_time - local_time`
   с учётом RTT/2. Подпись и nonce используют скорректированное время (TR-18).
 - **DP-18.** `abs(clock_skew) > CLOCK_SKEW_LIMIT_MS = 1000` → событие `CLOCK_SKEW_HIGH`,
-  повторный замер; подтверждение → kill switch (DP-30) + SITREP.
+  повторный замер; подтверждение → kill switch (DP-36) + SITREP.
 - **DP-19.** Внутри кода стратегии запрещены `time.time()`, `time.monotonic()`,
   `datetime.now()`, `asyncio.sleep` с реальным ожиданием. Только `event_time` из потока событий
   и внедрённые часы (`Clock` Protocol). Это обеспечивает TR-14 и DP-04.
 - **DP-20.** Каждый биржевой пакет хранит **оба** времени: `exchange_ts` (время биржи) и
   `received_at` (локальное время получения). Разница — метрика латентности; в бэктесте
-  используется `exchange_ts`, латентность моделируется отдельно (DP-37).
+  используется `exchange_ts`, латентность моделируется отдельно (DP-44).
 
 ---
 
@@ -3454,7 +3474,7 @@ NEW ──► SUBMITTED ──► ACCEPTED ──► PARTIALLY_FILLED ──► 
   SITREP человеку. Продолжать долбить после 429 — запрещено (это приводит к бану IP).
 - **DP-23.** Архитектурное правило: биржевой SDK/HTTP-клиент импортируется **только** внутри слоя
   Gateway (A). Импорт из стратегии, риск-движка или бэктеста → ошибка верификатора
-  `NO_DIRECT_EXCHANGE_IMPORT` (DP-47).
+  `NO_DIRECT_EXCHANGE_IMPORT` (§38.13).
 - **DP-24.** WebSocket: отдельный таймер «тишины» на каждый поток (`WS_SILENCE_TIMEOUT_S`,
   значение из документации биржи); keepalive/listenKey-пинг по расписанию биржи; реконнект —
   экспоненциальная задержка с джиттером, максимум `WS_MAX_RECONNECTS` → kill switch.
@@ -3464,7 +3484,7 @@ NEW ──► SUBMITTED ──► ACCEPTED ──► PARTIALLY_FILLED ──► 
   последовательности — повторить с шага 2. Стратегия **не получает** стакан до завершения ресинка.
 - **DP-26.** Обработка дубликатов и нарушения порядка событий: дедупликация по `event_id`/
   `(exchange_ts, lastUpdateId)`, отклонение устаревших событий. Дубликат подтверждения исполнения
-  не должен удваивать PnL (проверяется chaos-тестом DP-52).
+  не должен удваивать PnL (проверяется chaos-тестом DP-62).
 - **DP-27.** Приватные потоки (исполнения, балансы): `listenKey` создаётся, продлевается по
   расписанию и закрывается при остановке. Утечка незакрытых `listenKey` — дефект.
 
@@ -3476,7 +3496,7 @@ NEW ──► SUBMITTED ──► ACCEPTED ──► PARTIALLY_FILLED ──► 
   отсутствует `WITHDRAW`. Обнаружено право вывода → **отказ запускать live** + SITREP (TR-08).
 - **DP-29.** Хранение: для `PAPER`/`TESTNET` допустим `.env`; для `LIVE` — OS keyring
   (`keyring`) или зашифрованное хранилище (Fernet/age с мастер-ключом из окружения). Выбор —
-  ADR + подтверждение человека (DP-57).
+  ADR + подтверждение человека (DP-69).
 - **DP-30.** IP-whitelist: система рекомендует его настроить и при переходе в `LIVE` включает
   пункт в чек-лист подтверждения. Без подтверждения — не запускается.
 - **DP-31.** Подпись: HMAC-SHA256; Ed25519 — если биржа поддерживает (предпочтительнее, ADR).
@@ -3502,7 +3522,7 @@ NEW ──► SUBMITTED ──► ACCEPTED ──► PARTIALLY_FILLED ──► 
   (DP-37), `N` последовательных ошибок биржи, `418`, `WS_MAX_RECONNECTS` исчерпан, команда человека.
   Действия: отмена всех открытых ордеров → (по политике) закрытие позиций / заморозка / только остановка
   новых → переход в `HALTED` → SITREP человеку с диагностикой. **Политика действия при kill switch —
-  вопрос человеку (DP-57), а не решение по умолчанию.**
+  вопрос человеку (DP-69), а не решение по умолчанию.**
 - **DP-37.** Reconciliation (TR-12): каждые `RECONCILE_INTERVAL_S` сверка балансов, позиций и
   открытых ордеров с биржей. Расхождение больше quantum → `RECONCILIATION_MISMATCH` → HALT.
   Результат каждой сверки — в аудит.
@@ -3540,7 +3560,7 @@ NEW ──► SUBMITTED ──► ACCEPTED ──► PARTIALLY_FILLED ──► 
   in-sample и out-of-sample отдельно.
 - **DP-47.** Overfitting guard: лимит числа свободных параметров стратегии, учёт числа выполненных
   подборов прогонов в отчёте, опционально — deflated Sharpe ratio. Формулировка вывода —
-  осторожная: бэктест не гарантирует будущую доходность (DP-60).
+  осторожная: бэктест не гарантирует будущую доходность (DP-73, DP-75).
 - **DP-48.** Данные для бэктеста: только прошедшие проверки качества (DP-51: gaps, дубликаты,
   аномалии). Бэктест на непроверенных данных запрещён; верификатор требует наличия
   `data_quality_report` артефакта.
@@ -3578,7 +3598,7 @@ NEW ──► SUBMITTED ──► ACCEPTED ──► PARTIALLY_FILLED ──► 
 | `risk_engineer` | Risk Engineer | TR-05…TR-07, TR-12, DP-28, DP-34…DP-40 |
 | `backtest_engineer` | Backtest Engineer | TR-13…TR-16, DP-41…DP-48 |
 | `data_platform_engineer` | Data Platform Engineer | DP-50…DP-53, эффективность чтения, партиционирование |
-| `adversarial_qa_trading` | Adversarial QA (Trading) | DP-52…DP-56 chaos-сценарии, property-инварианты |
+| `adversarial_qa_trading` | Adversarial QA (Trading) | DP-60…DP-64 chaos-сценарии, property-инварианты |
 
 - **DP-54.** Каждая профессия стартует с `profile.json` (идентичность, предпочитаемый стек,
   запрещённые паттерны домена) и **пустым** `DISCOVERY_DIARY.md`: опыт накапливается только через
@@ -3601,7 +3621,7 @@ NEW ──► SUBMITTED ──► ACCEPTED ──► PARTIALLY_FILLED ──► 
 | `decimal_money` | `{value, quantum, mode} → {normalized: str}` | Нормализация цены/количества под quantum (DP-13, DP-14) |
 | `book_sync` | `{snapshot, deltas[]} → {book, ok, dropped_count}` | Ресинк стакана по lastUpdateId (DP-25) |
 | `order_state_machine` | `{current, event} → {next, legal: bool}` | Валидация перехода состояния ордера (DP-10) |
-| `ws_replay` | `{fixture_path, speed} → {events[]}` | Прогон записи реального потока (DP-52 фикстуры) |
+| `ws_replay` | `{fixture_path, speed} → {events[]}` | Прогон записи реального потока (DP-60 фикстуры) |
 | `clock_skew_check` | `{server_time, local_time, rtt_ms} → {skew_ms, ok}` | Контроль рассинхрона времени (DP-17) |
 | `hmac_sign_request` | `{method, path, params, secret_ref, ts} → {signature, signed_params}` | Подпись запроса (DP-31); секрет — по ссылке, не значением |
 | `audit_log_append` | `{entry} → {seq, sha256}` | Append-only аудит с хеш-цепочкой (TR-04) |
@@ -3639,7 +3659,7 @@ NEW ──► SUBMITTED ──► ACCEPTED ──► PARTIALLY_FILLED ──► 
 - **DP-57.** Эти проверки — **часть детерминированного судьи** (§18) для узлов торгового проекта:
   узел не проходит Judge Gate при любом `ERROR`.
 - **DP-58.** Дополнительно для узлов `backtest_*` судья запускает **тест детерминизма**:
-  два прогона эталонного бэктеста → сравнение хешей отчёта (DP-42, DP-49).
+  два прогона эталонного бэктеста → сравнение хешей отчёта (DP-42).
 - **DP-59.** Реализация проверок — AST-обход (Python) как отдельный верификатор `crypto_ast`
   с собственным `rule_id`, чтобы находки приходили в едином формате `Finding` (§SB-15).
 
@@ -3723,7 +3743,7 @@ NEW ──► SUBMITTED ──► ACCEPTED ──► PARTIALLY_FILLED ──► 
   funding-basis наблюдатель). В коде и в отчёте обязательна пометка
   `EDUCATIONAL EXAMPLE — NOT INVESTMENT ADVICE`. Запрещено представлять её как прибыльную.
 - **DP-67.** Первый проект **обязательно** заканчивается режимами `PAPER`/`TESTNET`.
-  Переход в `LIVE` — отдельный проект с отдельной эскалацией и отдельным чек-листом (DP-70).
+  Переход в `LIVE` — отдельный проект с отдельной эскалацией и отдельным чек-листом (DP-71).
 - **DP-68.** Параллелизм: после заморозки контрактов ветви `07…10`, `12…15`, `16…19`, `20…22`,
   `24…28` исполняются параллельно — это как раз тот случай, где динамический рой из 5–8 агентов
   даёт выигрыш во времени (C-01, SW-03: масштаб Large).

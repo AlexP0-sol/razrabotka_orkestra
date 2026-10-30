@@ -1,0 +1,4 @@
+{"event_id": "bn_001", "exchange": "binance", "symbol": "BTC/USDT", "exchange_ts": 1730000060000, "received_at": 1730000060018, "seq": 1, "close": "68000.00", "volume": "1.25000"}
+{"event_id": "bn_002", "exchange": "binance", "symbol": "BTC/USDT", "exchange_ts": 1730000120000, "received_at": 1730000120015, "seq": 2, "close": "68120.00", "volume": "2.10000"}
+{"event_id": "bn_003", "exchange": "binance", "symbol": "BTC/USDT", "exchange_ts": 1730000180000, "received_at": 1730000180021, "seq": 3, "close": "68090.00", "volume": "1.80000"}
+{"event_id": "bn_004", "exchange": "binance", "symbol": "BTC/USDT", "exchange_ts": 1730000240000, "received_at": 1730000240019, "seq": 4, "close": "68250.00", "volume": "3.05000"}
