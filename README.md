@@ -15,10 +15,10 @@ ORCHESTRA превращает сырое человеческое ТЗ (чер�
 
 ```bash
 git clone https://github.com/AlexP0-sol/razrabotka_orkestra.git && cd razrabotka_orkestra
-cp .env.example .env
 make install
-python -m orchestra doctor
-python -m orchestra demo
+python setup_env.py
+.venv/bin/python -m orchestra doctor
+.venv/bin/python -m orchestra demo
 ```
 
 Поднять resident-ядро с offline Web-дашбордом (`http://localhost:8000`):
@@ -56,6 +56,7 @@ make dev
 
 | Документ | Назначение |
 |---|---|
+| [`docs/ORCHESTRA_USER_GUIDE_RU_DARK.pdf`](docs/ORCHESTRA_USER_GUIDE_RU_DARK.pdf) | Полное иллюстрированное руководство пользователя на русском языке в тёмной теме (PDF) |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | Архитектура по слоям `L0–L7`, потоки данных, конкурентность, Windows/POSIX, `DomainPack` |
 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | Установка, настройка ключей, запуск на Windows/Linux/Docker, диагностика сбоев |
 | [`docs/PROTOCOLS.md`](docs/PROTOCOLS.md) | Все инженерные регламенты (`Telegraphic RPC`, `SITREP`, `Skeleton First`, `TDD`, `Gates`) |
